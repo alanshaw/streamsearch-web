@@ -112,7 +112,7 @@ The `maxMatches` option indicates the maximum number of matches that can be made
 
 The current match count.
 
-### `reset (): void`
+#### `reset (): void`
 
 Resets internal state. Useful for when you wish to start searching a new/different stream for example.
 
