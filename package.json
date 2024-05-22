@@ -1,6 +1,6 @@
 {
   "name": "streamsearch-web",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "author": "Brian White <mscdex@mscdex.net>, Alan Shaw <alan138@gmail.com>",
   "description": "Streaming Boyer-Moore-Horspool searching for the browser",
   "main": "./src/index.js",
