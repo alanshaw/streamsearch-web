@@ -1,10 +1,15 @@
-'use strict';
+import assert from 'node:assert'
+import { StreamSearch } from '../src/index.js'
 
-const assert = require('assert');
+/**
+ * @template T
+ * @param {ReadableStream<T>} src
+ * @returns {AsyncIterable<T>}
+ */
+// @ts-expect-error
+const toAsyncIterable = src => src
 
-const StreamSearch = require('../lib/sbmh.js');
-
-[
+;[
   {
     needle: '\r\n',
     chunks: [
@@ -14,7 +19,7 @@ const StreamSearch = require('../lib/sbmh.js');
       '\n',
       'baz, hello\r',
       '\n world.',
-      '\r\n Node.JS rules!!\r\n\r\n',
+      '\r\n Browser rules!!\r\n\r\n',
     ],
     expect: [
       [false, 'foo'],
@@ -24,7 +29,7 @@ const StreamSearch = require('../lib/sbmh.js');
       [ true, null],
       [false, ' world.'],
       [ true, null],
-      [ true, ' Node.JS rules!!'],
+      [ true, ' Browser rules!!'],
       [ true, ''],
     ],
   },
@@ -49,22 +54,28 @@ const StreamSearch = require('../lib/sbmh.js');
       [false, '--\r\n'],
     ],
   },
-].forEach((test, i) => {
-  console.log(`Running test #${i + 1}`);
-  const { needle, chunks, expect } = test;
+].forEach(async ({ needle, chunks, expect }, i) => {
+  console.log(`Running test #${i + 1}`)
 
-  const results = [];
-  const ss = new StreamSearch(Buffer.from(needle),
-                              (isMatch, data, start, end) => {
-    if (data)
-      data = data.toString('latin1', start, end);
-    else
-      data = null;
-    results.push([isMatch, data]);
-  });
+  const results = []
+  const ss = new StreamSearch(new TextEncoder().encode(needle))
 
-  for (const chunk of chunks)
-    ss.push(Buffer.from(chunk));
+  const src = new ReadableStream({
+    pull (controller) {
+      const chunk = chunks.shift()
+      if (!chunk) return controller.close()
+      controller.enqueue(new TextEncoder().encode(chunk))
+    }
+  })
 
-  assert.deepStrictEqual(results, expect);
-});
+  for await (const match of toAsyncIterable(src.pipeThrough(ss))) {
+    results.push([
+      match.isMatch,
+      match.hasNonMatchData
+        ? new TextDecoder().decode(match.data.subarray(match.begin, match.end))
+        : null
+    ])
+  }
+
+  assert.deepStrictEqual(results, expect)
+})
