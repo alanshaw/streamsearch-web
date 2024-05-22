@@ -40,23 +40,23 @@ const src = new ReadableStream({
 
 for await (const { isMatch, data, begin, end } of src.pipeThrough(ss)) {
   if (data)
-    console.log('data: ' + new TextDecoder().decode(data.subarray(begin, end)))
+    console.log(`data: "${new TextDecoder().decode(data.subarray(begin, end))}"`)
   if (isMatch)
     console.log('match!')
 }
 
 // output:
 //
-// data: 'foo'
-// data: ' bar'
+// data: "foo"
+// data: " bar"
 // match!
-// data: 'baz, hello'
+// data: "baz, hello"
 // match!
-// data: ' world.'
+// data: " world."
 // match!
-// data: ' Browser rules!!'
+// data: " Browser rules!!"
 // match!
-// data: ''
+// data: ""
 // match!
 ```
 
@@ -83,13 +83,15 @@ const chunks = [
 for (const chunk of chunks) {
   const buf = new TextEncoder().encode(chunk)
   for (const { isMatch, data, begin, end, isSafe } of sbmh.push(buf)) {
-    // `isSafe` indicates if it is safe to store a reference to `data` (e.g.
-    // as-is or via `data.slice()`) or not, as in some cases `data` may point
-    // to a `Uint8Array` whose contents change over time.
-    if (!isSafe)
-      // Use `data.slice()` if storing reference for after this loop iteration.
-    if (data)
-      console.log('data: ' + new TextDecoder().decode(data.subarray(begin, end)))
+    if (data) {
+      console.log(`data: "${new TextDecoder().decode(data.subarray(begin, end))}"`)
+      // `isSafe` indicates if it is safe to store a reference to `data` (e.g.
+      // as-is or via `data.slice()`) or not, as in some cases `data` may point
+      // to a `Uint8Array` whose contents change over time.
+      if (!isSafe)
+        // Take a copy if data is needed after this loop iteration.
+        data.slice()
+    }
     if (isMatch)
       console.log('match!')
   }
