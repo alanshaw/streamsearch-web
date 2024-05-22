@@ -61,7 +61,6 @@ export class SBMH {
         occ[needle[i]] = needleLen - 1 - i
     }
 
-    /** @type {State} */
     this.#state = {
       matches: 0,
       maxMatches: options?.maxMatches ?? Infinity,
